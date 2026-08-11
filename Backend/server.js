@@ -6,6 +6,40 @@ const app = express();
 
 app.use(express.json());
 
+app.post("/users",(req,res)=>{
+    const { name, email } = req.query;
+
+    if (!name || !email) {
+       return res.status(400).json({
+         error: "name and email are required",
+       });
+    }
+
+    const sql = `
+        INSERT INTO users (name, email)
+        VALUES (?, ?)
+    `;
+
+    db.query(sql, [name, email], (err, result) => {
+    if (err) {
+        console.error(err);
+
+        return res.status(500).json({
+        error: "Failed to add user",
+        });
+    }
+
+    res.status(201).json({
+        message: "User added successfully",
+        user: {
+            id: result.insertId,
+            name,
+            email,
+        },
+    });
+    });
+})
+
 app.get("/users", (req, res) => {
     const sql = "SELECT * FROM users";
 
