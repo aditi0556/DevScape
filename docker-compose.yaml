@@ -1,29 +1,12 @@
 services:
-  devscape-mysql:
-    image: mysql:latest
-    environment:
-      - MYSQL_ROOT_PASSWORD=password
-      - MYSQL_DATABASE=mydb
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-P", "3306", "--protocol=tcp", "-ppassword"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   devscape-backend:
-    image: aditiaditiaditi/my-backend:2.4
+    image: aditiaditiaditi/dev-backend:1.0
     ports:
       - 8080:3000
-    depends_on:
-      devscape-mysql:
-        condition: service_healthy
-
   devscape-frontend:
-    image: aditiaditiaditi/my-frontend:1.2
+    image: aditiaditiaditi/dev-frontend:1.0
     ports:
       - 5173:5173
     depends_on:
       devscape-backend:
         condition: service_started
-      devscape-mysql:
-        condition: service_healthy

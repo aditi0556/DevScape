@@ -29,12 +29,16 @@ function App() {
       return;
     }
 
-    fetch(
-      `http://localhost:8080/users?name=${encodeURIComponent(name)}&email=${encodeURIComponent(email)}`,
-      {
-        method: "POST",
+    fetch("http://localhost:8080/users", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    )
+      body: JSON.stringify({
+        name: name,
+        email: email,
+      }),
+    })
       .then((response) => response.json())
       .then((data) => {
         console.log(data);
@@ -78,8 +82,8 @@ function App() {
       {users.length === 0 ? (
         <p>No users found.</p>
       ) : (
-        users.map((user) => (
-          <div key={user.id}>
+        users.map((user, index) => (
+          <div key={user.id || index}>
             <p>
               <strong>Name:</strong> {user.name}
             </p>
