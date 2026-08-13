@@ -1,15 +1,15 @@
 import express from "express";
 import cors from "cors";
-import db from "./db/connection.js";
-import "./db/init.js";
+import { db, waitForDb } from "./connection.js";
+import initDb from "./init.js";
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 
-app.post("/users", (req, res) => {
-  const { name, email } = req.query;
+app.post("/users", async (req, res) => {
+  const { name, email } = req.body;
 
   if (!name || !email) {
     return res.status(400).json({
@@ -18,18 +18,12 @@ app.post("/users", (req, res) => {
   }
 
   const sql = `
-        INSERT INTO users (name, email)
-        VALUES (?, ?)
-    `;
+    INSERT INTO users (name, email)
+    VALUES (?, ?)
+  `;
 
-  db.query(sql, [name, email], (err, result) => {
-    if (err) {
-      console.error(err);
-
-      return res.status(500).json({
-        error: "Failed to add user",
-      });
-    }
+  try {
+    const [result] = await db.query(sql, [name, email]);
 
     res.status(201).json({
       message: "User added successfully",
@@ -39,29 +33,37 @@ app.post("/users", (req, res) => {
         email,
       },
     });
-  });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      error: "Failed to add user",
+    });
+  }
 });
 
-app.get("/users", (req, res) => {
-  const sql = "SELECT * FROM users";
-
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error(err);
-
-      return res.status(500).json({
-        error: "Database query failed",
-      });
-    }
-
-    res.json(result);
-  });
+app.get("/users", async (req, res) => {
+  try {
+    const [results] = await db.query("SELECT * FROM users");
+    res.json(results);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get("/", (req, res) => {
   res.send("Hello World");
 });
 
-app.listen(3000, () => {
-  console.log("Server is running on port 3000");
+async function startServer() {
+  await waitForDb();
+  await initDb();
+
+  app.listen(3000, () => {
+    console.log("Server is running on port 3000");
+  });
+}
+
+startServer().catch((err) => {
+  console.error("Failed to start server:", err.message);
+  process.exit(1);
 });

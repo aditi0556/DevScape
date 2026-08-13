@@ -1,4 +1,4 @@
-import mysql from "mysql2";
+import mysql from "mysql2/promise";
 
 const db = mysql.createPool({
   host: "devscape-mysql",
@@ -8,20 +8,22 @@ const db = mysql.createPool({
   connectionLimit: 10,
   waitForConnections: true,
 });
-function waitForDb(retries = 10) {
-  db.query("SELECT 1", (err) => {
-    if (err) {
-      if (retries === 0) {
-        console.error("Could not reach database, giving up.");
-        return;
-      }
-      console.error("DB not ready yet, retrying in 5s...", err.code);
-      setTimeout(() => waitForDb(retries - 1), 5000);
-    } else {
-      console.log("Connected to database successfully!");
-    }
-  });
-}
-waitForDb();
 
-export default db;
+async function waitForDb(retries = 10, delay = 5000) {
+  while (retries > 0) {
+    try {
+      await db.query("SELECT 1");
+      console.log("Connected to database successfully!");
+      return;
+    } catch (err) {
+      console.error("DB not ready yet, retrying in 5s...", err.code);
+      retries--;
+      if (retries === 0) {
+        throw new Error("Could not reach database, giving up.");
+      }
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+  }
+}
+
+export { db, waitForDb };
